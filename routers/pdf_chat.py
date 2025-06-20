@@ -1,8 +1,8 @@
 from fastapi import APIRouter, UploadFile, File, HTTPException
 from schemas.pdf import PDFUploadResponse, QuestionRequest, AnswerResponse
-from schemas.quiz import QuizRequest, QuizResponse
+from schemas.quiz import QuizRequest, QuizResponse, BulletPointsRequest, BulletPointsResponse
 from services.pdf_chat import process_pdf, answer_question
-from services.quiz import generate_quiz_from_pdf, generate_quiz_from_pdf_id
+from services.quiz import generate_quiz_from_pdf, generate_quiz_from_pdf_id, extract_bullet_points_from_pdf_id
 
 router = APIRouter()
 pdf_indexes = {}
@@ -34,4 +34,11 @@ async def quiz_by_file(file: UploadFile = File(...)):
     if not file.filename.endswith(".pdf"):
         raise HTTPException(status_code=400, detail="Only PDF files are supported.")
     questions = await generate_quiz_from_pdf(file)
-    return QuizResponse(questions=questions) 
+    return QuizResponse(questions=questions)
+
+@router.post("/bullet-points", response_model=BulletPointsResponse)
+async def bullet_points(request: BulletPointsRequest):
+    if request.pdf_id not in pdf_indexes:
+        raise HTTPException(status_code=404, detail="PDF not found. Please upload first.")
+    bullet_points = await extract_bullet_points_from_pdf_id(request.pdf_id, pdf_indexes, pdf_metadata)
+    return BulletPointsResponse(bullet_points=bullet_points) 

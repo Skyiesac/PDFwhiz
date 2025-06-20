@@ -47,4 +47,23 @@ async def generate_quiz_from_pdf_id(pdf_id, pdf_indexes, pdf_metadata):
         "Format: Each question on a new line, followed by 'Answer: ...' on the next line. Separate each Q&A pair with a blank line.\n"
         f"PDF Content:\n{text[:4000]}\nQuiz:"
     )
-    return parse_quiz_output(llm(prompt)) 
+    return parse_quiz_output(llm(prompt))
+
+async def extract_bullet_points_from_pdf_id(pdf_id, pdf_indexes, pdf_metadata):
+    vectorstore = pdf_indexes.get(pdf_id)
+    if not vectorstore:
+        return []
+    docs = vectorstore.similarity_search(".", k=1000)  # Get as many as possible
+    if not docs:
+        return []
+   
+    text = "\n".join(doc.page_content for doc in docs)
+    llm = get_llm()
+    prompt = (
+        "Extract the main bullet points from the following PDF content. "
+        "List each point as a separate bullet. Be concise and cover each and every key idea \n"
+        f"PDF Content:\n{text[:4000]}\nBullet Points:"
+    )
+    bullets_text = llm(prompt)
+    bullet_points = [line.lstrip('-•* ').strip() for line in bullets_text.split('\n') if line.strip()]
+    return bullet_points 

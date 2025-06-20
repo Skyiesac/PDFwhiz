@@ -9,4 +9,10 @@ class QuizQuestion(BaseModel):
     answer: str = None  # Optional, can be omitted if only questions are needed
 
 class QuizResponse(BaseModel):
-    questions: List[QuizQuestion] 
+    questions: List[QuizQuestion]
+
+class BulletPointsRequest(BaseModel):
+    pdf_id: str
+
+class BulletPointsResponse(BaseModel):
+    bullet_points: List[str] 
