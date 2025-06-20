@@ -16,6 +16,7 @@ function App() {
   const [quiz, setQuiz] = useState(null);
   const [topics, setTopics] = useState(null);
   const [bullets, setBullets] = useState(null);
+  const [quizAnswersVisible, setQuizAnswersVisible] = useState([]);
   const fileInputRef = useRef();
 
   React.useEffect(() => {
@@ -91,6 +92,7 @@ function App() {
 
   const handleQuiz = async () => {
     setQuiz(null);
+    setQuizAnswersVisible([]);
     setError(null);
     try {
       const res = await fetch('http://localhost:8000/api/v1/pdf-chat/quiz', {
@@ -101,6 +103,7 @@ function App() {
       if (!res.ok) throw new Error('Failed to get quiz');
       const data = await res.json();
       setQuiz(data.questions);
+      setQuizAnswersVisible(Array(data.questions.length).fill(false));
     } catch (err) {
       setError('Error: ' + err.message);
     }
@@ -140,6 +143,122 @@ function App() {
     }
   };
 
+  // UI for each feature page
+  const renderAskPage = () => (
+    <div className="main-content">
+      <button className="back-icon-btn" onClick={() => setActiveOption(null)} aria-label="Back to Options">
+        <svg width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M15 19l-7-7 7-7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+      </button>
+      <h1 className="fun-title">Ask a Question</h1>
+      <div style={{ width: '100%', maxWidth: 500, margin: '2em auto 0 auto' }}>
+        <input
+          type="text"
+          className="fun-upload-label"
+          style={{ width: '100%', marginBottom: 16, padding: 16, borderRadius: 10, border: '2px solid #2979ff', fontSize: 20 }}
+          placeholder="Type your question..."
+          value={question}
+          onChange={e => setQuestion(e.target.value)}
+        />
+        <button className="fun-upload-btn" onClick={handleAsk} style={{ marginBottom: 20, fontSize: 18 }}>Get Answer</button>
+        {answer && <div className="fun-success-message" style={{ fontSize: 18 }}>{answer}</div>}
+        {error && <div className="fun-error-message">{error}</div>}
+      </div>
+    </div>
+  );
+
+  const renderQuizPage = () => (
+    <div className="main-content">
+      <button className="back-icon-btn" onClick={() => setActiveOption(null)} aria-label="Back to Options">
+        <svg width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M15 19l-7-7 7-7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+      </button>
+      <h1 className="fun-title">Quiz</h1>
+      <div style={{ width: '100%', maxWidth: 600, margin: '2em auto 0 auto' }}>
+        {quiz ? quiz.map((q, i) => (
+          <div key={i} style={{ marginBottom: 22, background: 'var(--card-bg, #181b23)', borderRadius: 14, padding: '1.1em 1.2em', boxShadow: '0 2px 10px rgba(41,121,255,0.07)', border: '1.5px solid #2979ff', position: 'relative' }}>
+            <div style={{ display: 'flex', alignItems: 'center', fontWeight: 600, fontSize: 18, color: '#eaeaea' }}>
+              <span style={{ flex: 1 }}>{i + 1}. {q.question}</span>
+              {q.answer && (
+                <button
+                  aria-label={quizAnswersVisible[i] ? 'Hide answer' : 'Show answer'}
+                  onClick={() => setQuizAnswersVisible(v => v.map((val, idx) => idx === i ? !val : val))}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', marginLeft: 10, color: '#2979ff', fontSize: 22 }}
+                >
+                  {quizAnswersVisible[i] ? (
+                    <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M17.94 17.94A10.06 10.06 0 0 1 12 20c-5 0-9.27-3.11-11-8 1.02-2.61 2.93-4.77 5.34-6.13M9.53 9.53A3 3 0 0 1 12 9c1.66 0 3 1.34 3 3 0 .47-.11.91-.29 1.3M21 21L3 3" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                  ) : (
+                    <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor"><ellipse cx="12" cy="12" rx="10" ry="7" strokeWidth="2"/><circle cx="12" cy="12" r="3" strokeWidth="2"/></svg>
+                  )}
+                </button>
+              )}
+            </div>
+            {q.answer && quizAnswersVisible[i] && (
+              <div style={{ color: '#2979ff', marginTop: 12, fontSize: 17, fontWeight: 500, transition: 'opacity 0.2s', opacity: 1 }}>
+                Answer: {q.answer}
+              </div>
+            )}
+          </div>
+        )) : <div className="fun-upload-label" style={{ marginTop: 20 }}>Loading quiz...</div>}
+        {error && <div className="fun-error-message">{error}</div>}
+        <button className="fun-upload-btn" style={{ marginTop: 30, fontSize: 17, float: 'right' }} onClick={handleQuiz}>
+          Take Another Quiz &rarr;
+        </button>
+      </div>
+    </div>
+  );
+
+  const renderTopicsPage = () => (
+    <div className="main-content">
+      <button className="back-icon-btn" onClick={() => setActiveOption(null)} aria-label="Back to Options">
+        <svg width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M15 19l-7-7 7-7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+      </button>
+      <h1 className="fun-title">Topics</h1>
+      <div style={{ width: '100%', maxWidth: 700, margin: '2em auto 0 auto', display: 'flex', flexWrap: 'wrap', gap: '1.2em', justifyContent: 'center' }}>
+        {topics ? topics.map((t, i) => (
+          <div key={i} style={{ background: 'var(--card-bg, #181b23)', borderRadius: 16, padding: '1.2em 1.3em', boxShadow: '0 4px 18px rgba(41,121,255,0.13)', borderLeft: '6px solid #2979ff', minWidth: 260, maxWidth: 340, flex: '1 1 260px', color: '#eaeaea', position: 'relative', transition: 'transform 0.13s, box-shadow 0.13s', display: 'flex', flexDirection: 'column', gap: 8 }}
+            onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-4px) scale(1.03)'}
+            onMouseLeave={e => e.currentTarget.style.transform = 'none'}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+              <span style={{ fontSize: 22, color: '#2979ff' }}>
+                <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M17 7a5 5 0 0 0-10 0c0 2.5 2.5 4.5 5 7 2.5-2.5 5-4.5 5-7z" strokeWidth="2"/><circle cx="12" cy="7" r="2" strokeWidth="2"/></svg>
+              </span>
+              <span style={{ fontWeight: 700, fontSize: 20, color: '#2979ff' }}>{t.label}</span>
+            </div>
+            {t.keywords && <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 2 }}>
+              {t.keywords.map((kw, idx) => (
+                <span key={idx} style={{ background: '#2979ff', color: '#fff', borderRadius: 8, padding: '2px 10px', fontSize: 13, fontWeight: 600 }}>{kw}</span>
+              ))}
+            </div>}
+            {t.score !== undefined && (
+              <div style={{ marginTop: 6, display: 'flex', alignItems: 'center', gap: 8 }}>
+                <div style={{ flex: 1, height: 7, background: '#222', borderRadius: 5, overflow: 'hidden' }}>
+                  <div style={{ width: `${Math.round(t.score * 100)}%`, height: '100%', background: '#2979ff', borderRadius: 5, transition: 'width 0.3s' }}></div>
+                </div>
+                <span style={{ color: '#2979ff', fontWeight: 700, fontSize: 13 }}>{Math.round(t.score * 100)}%</span>
+              </div>
+            )}
+          </div>
+        )) : <div className="fun-upload-label" style={{ marginTop: 20 }}>Loading topics...</div>}
+        {error && <div className="fun-error-message">{error}</div>}
+      </div>
+    </div>
+  );
+
+  const renderBulletsPage = () => (
+    <div className="main-content">
+      <button className="back-icon-btn" onClick={() => setActiveOption(null)} aria-label="Back to Options">
+        <svg width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M15 19l-7-7 7-7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+      </button>
+      <h1 className="fun-title">Bullet Summary</h1>
+      <div style={{ width: '100%', maxWidth: 600, margin: '2em auto 0 auto', display: 'flex', flexDirection: 'column', gap: '1.1em' }}>
+        {bullets ? bullets.map((b, i) => (
+          <div key={i} style={{ background: 'var(--card-bg, #181b23)', borderRadius: 12, padding: '1.1em 1.3em', boxShadow: '0 2px 10px rgba(41,121,255,0.07)', border: '1.5px solid #2979ff', color: '#eaeaea', fontSize: 17, marginBottom: 0, width: '100%' }}>{b}</div>
+        )) : <div className="fun-upload-label" style={{ marginTop: 20 }}>Loading summary...</div>}
+        {error && <div className="fun-error-message">{error}</div>}
+      </div>
+    </div>
+  );
+
   // UI for options page
   const renderOptions = () => (
     <div className="main-content">
@@ -173,51 +292,6 @@ function App() {
           Bullets
         </div>
       </div>
-      {activeOption === 'ask' && (
-        <div style={{ width: '100%', maxWidth: 500, margin: '2em auto 0 auto' }}>
-          <input
-            type="text"
-            className="fun-upload-label"
-            style={{ width: '100%', marginBottom: 12, padding: 10, borderRadius: 8, border: '1.5px solid #2979ff', fontSize: 18 }}
-            placeholder="Type your question..."
-            value={question}
-            onChange={e => setQuestion(e.target.value)}
-          />
-          <button className="fun-upload-btn" onClick={handleAsk} style={{ marginBottom: 16 }}>Get Answer</button>
-          {answer && <div className="fun-success-message">{answer}</div>}
-        </div>
-      )}
-      {activeOption === 'quiz' && quiz && (
-        <div style={{ width: '100%', maxWidth: 600, margin: '2em auto 0 auto' }}>
-          <h3 style={{ color: '#2979ff', marginBottom: 10 }}>Quiz</h3>
-          {quiz.map((q, i) => (
-            <div key={i} style={{ marginBottom: 18 }}>
-              <div style={{ fontWeight: 600 }}>{i + 1}. {q.question}</div>
-              {q.answer && <div style={{ color: '#2979ff', marginLeft: 10 }}>Answer: {q.answer}</div>}
-            </div>
-          ))}
-        </div>
-      )}
-      {activeOption === 'topics' && topics && (
-        <div style={{ width: '100%', maxWidth: 600, margin: '2em auto 0 auto' }}>
-          <h3 style={{ color: '#2979ff', marginBottom: 10 }}>Topics</h3>
-          {topics.map((t, i) => (
-            <div key={i} style={{ marginBottom: 18 }}>
-              <div style={{ fontWeight: 600 }}>{i + 1}. {t.label}</div>
-              {t.keywords && <div style={{ color: '#2979ff', marginLeft: 10 }}>Keywords: {t.keywords.join(', ')}</div>}
-              {t.score !== undefined && <div style={{ color: '#888', marginLeft: 10 }}>Relevance: {(t.score * 100).toFixed(1)}%</div>}
-            </div>
-          ))}
-        </div>
-      )}
-      {activeOption === 'bullets' && bullets && (
-        <div style={{ width: '100%', maxWidth: 600, margin: '2em auto 0 auto' }}>
-          <h3 style={{ color: '#2979ff', marginBottom: 10 }}>Bullet Summary</h3>
-          <ul style={{ paddingLeft: 20 }}>
-            {bullets.map((b, i) => <li key={i} style={{ marginBottom: 8 }}>{b}</li>)}
-          </ul>
-        </div>
-      )}
       {error && <div className="fun-error-message">{error}</div>}
     </div>
   );
@@ -286,9 +360,13 @@ function App() {
             </section>
           </div>
         ) : (
-          renderOptions()
+          page === 'options' && !activeOption ? renderOptions() :
+          activeOption === 'ask' ? renderAskPage() :
+          activeOption === 'quiz' ? renderQuizPage() :
+          activeOption === 'topics' ? renderTopicsPage() :
+          activeOption === 'bullets' ? renderBulletsPage() : null
         )}
-        <footer className="fun-footer">Developed by Sachi - 2025</footer>
+        <footer className="fun-footer">Developed by Sachi Jain</footer>
       </div>
     </>
   );
