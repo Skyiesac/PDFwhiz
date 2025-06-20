@@ -9,6 +9,13 @@ function App() {
   const [error, setError] = useState(null);
   const [pdfId, setPdfId] = useState(null);
   const [theme, setTheme] = useState('dark');
+  const [page, setPage] = useState('upload'); // 'upload' or 'options'
+  const [activeOption, setActiveOption] = useState(null); // 'ask', 'quiz', 'topics', 'bullets'
+  const [question, setQuestion] = useState('');
+  const [answer, setAnswer] = useState(null);
+  const [quiz, setQuiz] = useState(null);
+  const [topics, setTopics] = useState(null);
+  const [bullets, setBullets] = useState(null);
   const fileInputRef = useRef();
 
   React.useEffect(() => {
@@ -24,6 +31,12 @@ function App() {
     setError(null);
     setSuccess(null);
     setPdfId(null);
+    setPage('upload');
+    setActiveOption(null);
+    setAnswer(null);
+    setQuiz(null);
+    setTopics(null);
+    setBullets(null);
     const file = e.target.files[0];
     if (!file) return;
     if (file.type !== 'application/pdf') {
@@ -45,6 +58,7 @@ function App() {
       const data = await res.json();
       setSuccess('PDF uploaded! PDF ID: ' + data.pdf_id);
       setPdfId(data.pdf_id);
+      setPage('options');
     } catch (err) {
       setError(err.message);
     } finally {
@@ -55,6 +69,158 @@ function App() {
   const toggleTheme = () => {
     setTheme((prev) => (prev === 'light' ? 'dark' : 'light'));
   };
+
+  // Feature handlers
+  const handleAsk = async () => {
+    setAnswer(null);
+    setError(null);
+    if (!question.trim()) return;
+    try {
+      const res = await fetch('http://localhost:8000/api/v1/pdf-chat/ask', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pdf_id: pdfId, question }),
+      });
+      if (!res.ok) throw new Error('Failed to get answer');
+      const data = await res.json();
+      setAnswer(data.answer);
+    } catch (err) {
+      setError('Error: ' + err.message);
+    }
+  };
+
+  const handleQuiz = async () => {
+    setQuiz(null);
+    setError(null);
+    try {
+      const res = await fetch('http://localhost:8000/api/v1/pdf-chat/quiz', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pdf_id: pdfId }),
+      });
+      if (!res.ok) throw new Error('Failed to get quiz');
+      const data = await res.json();
+      setQuiz(data.questions);
+    } catch (err) {
+      setError('Error: ' + err.message);
+    }
+  };
+
+  const handleTopics = async () => {
+    setTopics(null);
+    setError(null);
+    try {
+      const res = await fetch('http://localhost:8000/api/v1/pdf-chat/topics', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pdf_id: pdfId }),
+      });
+      if (!res.ok) throw new Error('Failed to get topics');
+      const data = await res.json();
+      setTopics(data.topics);
+    } catch (err) {
+      setError('Error: ' + err.message);
+    }
+  };
+
+  const handleBullets = async () => {
+    setBullets(null);
+    setError(null);
+    try {
+      const res = await fetch('http://localhost:8000/api/v1/pdf-chat/bullet-points', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pdf_id: pdfId }),
+      });
+      if (!res.ok) throw new Error('Failed to get bullet points');
+      const data = await res.json();
+      setBullets(data.bullet_points);
+    } catch (err) {
+      setError('Error: ' + err.message);
+    }
+  };
+
+  // UI for options page
+  const renderOptions = () => (
+    <div className="main-content">
+      <button className="back-icon-btn" onClick={() => { setPage('upload'); setPdfId(null); setActiveOption(null); setSuccess(null); setAnswer(null); setQuiz(null); setTopics(null); setBullets(null); }} aria-label="Back to Upload">
+        <svg width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M15 19l-7-7 7-7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+      </button>
+      <h1 className="fun-title">PDF Options</h1>
+      <div className="options-grid">
+        <div className="option-card" onClick={() => setActiveOption('ask')}>
+          <div className="option-icon">
+            <svg width="38" height="38" fill="none" viewBox="0 0 24 24" stroke="currentColor"><circle cx="12" cy="12" r="10" strokeWidth="2"/><path d="M9.09 9a3 3 0 1 1 5.82 1c0 2-3 2-3 4" strokeWidth="2" strokeLinecap="round"/><circle cx="12" cy="17" r="1"/></svg>
+          </div>
+          Ask
+        </div>
+        <div className="option-card" onClick={() => { setActiveOption('quiz'); handleQuiz(); }}>
+          <div className="option-icon">
+            <svg width="38" height="38" fill="none" viewBox="0 0 24 24" stroke="currentColor"><rect x="3" y="4" width="18" height="16" rx="2" strokeWidth="2"/><path d="M7 8h10M7 12h6M7 16h2" strokeWidth="2" strokeLinecap="round"/></svg>
+          </div>
+          Quiz
+        </div>
+        <div className="option-card" onClick={() => { setActiveOption('topics'); handleTopics(); }}>
+          <div className="option-icon">
+            <svg width="38" height="38" fill="none" viewBox="0 0 24 24" stroke="currentColor"><circle cx="12" cy="12" r="10" strokeWidth="2"/><path d="M8 15s1.5-2 4-2 4 2 4 2" strokeWidth="2" strokeLinecap="round"/><circle cx="9" cy="10" r="1"/><circle cx="15" cy="10" r="1"/></svg>
+          </div>
+          Topics
+        </div>
+        <div className="option-card" onClick={() => { setActiveOption('bullets'); handleBullets(); }}>
+          <div className="option-icon">
+            <svg width="38" height="38" fill="none" viewBox="0 0 24 24" stroke="currentColor"><circle cx="6" cy="6" r="2" strokeWidth="2"/><circle cx="6" cy="12" r="2" strokeWidth="2"/><circle cx="6" cy="18" r="2" strokeWidth="2"/><path d="M10 6h8M10 12h8M10 18h8" strokeWidth="2" strokeLinecap="round"/></svg>
+          </div>
+          Bullets
+        </div>
+      </div>
+      {activeOption === 'ask' && (
+        <div style={{ width: '100%', maxWidth: 500, margin: '2em auto 0 auto' }}>
+          <input
+            type="text"
+            className="fun-upload-label"
+            style={{ width: '100%', marginBottom: 12, padding: 10, borderRadius: 8, border: '1.5px solid #2979ff', fontSize: 18 }}
+            placeholder="Type your question..."
+            value={question}
+            onChange={e => setQuestion(e.target.value)}
+          />
+          <button className="fun-upload-btn" onClick={handleAsk} style={{ marginBottom: 16 }}>Get Answer</button>
+          {answer && <div className="fun-success-message">{answer}</div>}
+        </div>
+      )}
+      {activeOption === 'quiz' && quiz && (
+        <div style={{ width: '100%', maxWidth: 600, margin: '2em auto 0 auto' }}>
+          <h3 style={{ color: '#2979ff', marginBottom: 10 }}>Quiz</h3>
+          {quiz.map((q, i) => (
+            <div key={i} style={{ marginBottom: 18 }}>
+              <div style={{ fontWeight: 600 }}>{i + 1}. {q.question}</div>
+              {q.answer && <div style={{ color: '#2979ff', marginLeft: 10 }}>Answer: {q.answer}</div>}
+            </div>
+          ))}
+        </div>
+      )}
+      {activeOption === 'topics' && topics && (
+        <div style={{ width: '100%', maxWidth: 600, margin: '2em auto 0 auto' }}>
+          <h3 style={{ color: '#2979ff', marginBottom: 10 }}>Topics</h3>
+          {topics.map((t, i) => (
+            <div key={i} style={{ marginBottom: 18 }}>
+              <div style={{ fontWeight: 600 }}>{i + 1}. {t.label}</div>
+              {t.keywords && <div style={{ color: '#2979ff', marginLeft: 10 }}>Keywords: {t.keywords.join(', ')}</div>}
+              {t.score !== undefined && <div style={{ color: '#888', marginLeft: 10 }}>Relevance: {(t.score * 100).toFixed(1)}%</div>}
+            </div>
+          ))}
+        </div>
+      )}
+      {activeOption === 'bullets' && bullets && (
+        <div style={{ width: '100%', maxWidth: 600, margin: '2em auto 0 auto' }}>
+          <h3 style={{ color: '#2979ff', marginBottom: 10 }}>Bullet Summary</h3>
+          <ul style={{ paddingLeft: 20 }}>
+            {bullets.map((b, i) => <li key={i} style={{ marginBottom: 8 }}>{b}</li>)}
+          </ul>
+        </div>
+      )}
+      {error && <div className="fun-error-message">{error}</div>}
+    </div>
+  );
 
   if (loading) {
     return (
@@ -93,31 +259,35 @@ function App() {
             )}
           </button>
         </header>
-        <div className="main-content">
-          <h1 className="fun-title">
-            Unleash Your <span className="fun-title-huge">PDF Magic!</span>
-          </h1>
-          <p className="fun-tagline">Turn boring PDFs into <span className="fun-highlight">fun, interactive</span> experiences.<br/>Upload your PDF and let PDFwhiz do the magic!</p>
-          <section className="fun-upload-section" id="upload">
-            <label htmlFor="pdf-upload" className="fun-upload-label">
-              Upload your PDF
-            </label>
-            <input
-              id="pdf-upload"
-              type="file"
-              accept="application/pdf"
-              ref={fileInputRef}
-              className="fun-file-input"
-              onChange={handleFileChange}
-              disabled={uploading}
-            />
-            <button className="fun-upload-btn" onClick={() => fileInputRef.current.click()} disabled={uploading}>
-              {uploading ? 'Uploading...' : 'Choose PDF'}
-            </button>
-            {success && <div className="fun-success-message">{success}</div>}
-            {error && <div className="fun-error-message">{error}</div>}
-          </section>
-        </div>
+        {page === 'upload' ? (
+          <div className="main-content">
+            <h1 className="fun-title">
+              Unleash Your <span className="fun-title-huge">PDF Magic!</span>
+            </h1>
+            <p className="fun-tagline">Turn boring PDFs into <span className="fun-highlight">fun, interactive</span> experiences.<br/>Upload your PDF and let PDFwhiz do the magic!</p>
+            <section className="fun-upload-section" id="upload">
+              <label htmlFor="pdf-upload" className="fun-upload-label">
+                Upload your PDF
+              </label>
+              <input
+                id="pdf-upload"
+                type="file"
+                accept="application/pdf"
+                ref={fileInputRef}
+                className="fun-file-input"
+                onChange={handleFileChange}
+                disabled={uploading}
+              />
+              <button className="fun-upload-btn" onClick={() => fileInputRef.current.click()} disabled={uploading}>
+                {uploading ? 'Uploading...' : 'Choose PDF'}
+              </button>
+              {success && <div className="fun-success-message">{success}</div>}
+              {error && <div className="fun-error-message">{error}</div>}
+            </section>
+          </div>
+        ) : (
+          renderOptions()
+        )}
         <footer className="fun-footer">Developed by Sachi - 2025</footer>
       </div>
     </>

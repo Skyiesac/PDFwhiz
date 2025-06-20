@@ -144,6 +144,7 @@ body, .dark-theme, body.dark-theme {
   flex: 1 0 auto;
   justify-content: center;
   min-height: 60vh;
+  position: relative;
 }
 
 .fun-title {
@@ -370,4 +371,96 @@ body, .dark-theme, body.dark-theme {
 
 .light-theme .fun-footer {
   color: #181b23;
+}
+
+.back-icon-btn {
+  background: none;
+  border: none;
+  color: #2979ff;
+  font-size: 2.1rem;
+  cursor: pointer;
+  margin-bottom: 2.5em;
+  margin-top: 0.5em;
+  margin-right: auto;
+  display: flex;
+  align-items: center;
+  transition: color 0.18s;
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+.options-grid {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 2.2rem;
+  justify-content: center;
+  align-items: center;
+  margin: 0;
+  min-height: 280px;
+}
+
+.option-card {
+  width: 140px;
+  height: 140px;
+  background: var(--card-bg, #181b23);
+  border-radius: 18px;
+  border: 2.5px solid #2979ff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 2px 16px rgba(41,121,255,0.10);
+  transition: transform 0.13s, box-shadow 0.13s, border 0.13s;
+  font-family: 'Poppins', Arial, sans-serif;
+  font-weight: 600;
+  font-size: 1.15rem;
+  color: #eaeaea;
+  position: relative;
+}
+.option-card:hover {
+  transform: translateY(-6px) scale(1.04);
+  box-shadow: 0 6px 24px rgba(41,121,255,0.18);
+  border-color: #1656b7;
+}
+.option-card .option-icon {
+  margin-bottom: 0.7em;
+  font-size: 2.5rem;
+  color: #2979ff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@media (max-width: 900px) {
+  .options-grid {
+    gap: 1.2rem;
+  }
+  .option-card {
+    width: 120px;
+    height: 120px;
+    font-size: 1rem;
+  }
+}
+
+@media (max-width: 600px) {
+  .options-grid {
+    flex-direction: column;
+    gap: 1.2rem;
+    min-height: 0;
+  }
+  .option-card {
+    width: 90vw;
+    max-width: 340px;
+    height: 90px;
+    font-size: 1rem;
+  }
+  .back-icon-btn {
+    font-size: 1.7rem;
+    margin-bottom: 1em;
+    position: static;
+    margin-top: 0;
+  }
 }
