@@ -67,3 +67,39 @@ if st.button("Extract Bullet Points"):
                 st.info("No bullet points found.")
         else:
             st.error(f"Error: {response.text}")
+
+# Topic Modeling Section (Auto-fetch and display if pdf_id exists)
+if "pdf_id" in st.session_state:
+    st.header("5. Main Topics in your PDF")
+    if "topics" not in st.session_state:
+        with st.spinner("Extracting topics..."):
+            data = {"pdf_id": st.session_state["pdf_id"]}
+            response = requests.post(f"{API_URL}/topics", json=data)
+            if response.status_code == 200:
+                st.session_state["topics"] = response.json()["topics"]
+            else:
+                st.session_state["topics"] = None
+                st.error(f"Error: {response.text}")
+    topics = st.session_state.get("topics")
+    if topics:
+        st.markdown("### Main Topics:")
+        for i, topic in enumerate(topics, 1):
+            st.markdown(f"**{i}. {topic['label']}**")
+            if topic.get("keywords"):
+                st.markdown(f"Keywords: {', '.join(topic['keywords'])}")
+            if topic.get("score") is not None:
+                st.markdown(f"Relevance: {topic['score']:.2%}")
+            st.markdown("---")
+    elif topics == []:
+        st.info("No topics found.")
+
+    # Manual re-extraction button
+    if st.button("Extract Topics Again"):
+        with st.spinner("Extracting topics..."):
+            data = {"pdf_id": st.session_state["pdf_id"]}
+            response = requests.post(f"{API_URL}/topics", json=data)
+            if response.status_code == 200:
+                st.session_state["topics"] = response.json()["topics"]
+                st.rerun()
+            else:
+                st.error(f"Error: {response.text}")

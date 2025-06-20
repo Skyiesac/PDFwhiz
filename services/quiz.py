@@ -66,4 +66,36 @@ async def extract_bullet_points_from_pdf_id(pdf_id, pdf_indexes, pdf_metadata):
     )
     bullets_text = llm(prompt)
     bullet_points = [line.lstrip('-•* ').strip() for line in bullets_text.split('\n') if line.strip()]
-    return bullet_points 
+    return bullet_points
+
+async def extract_topics_from_pdf_id(pdf_id, pdf_indexes, pdf_metadata):
+    vectorstore = pdf_indexes.get(pdf_id)
+    if not vectorstore:
+        return []
+    docs = vectorstore.similarity_search(".", k=1000)
+    if not docs:
+        return []
+    text = "\n".join(doc.page_content for doc in docs)
+    llm = get_llm()
+    prompt = (
+        "Extract the main topics from the following PDF content. "
+        "For each topic, provide: a label (short phrase), a list of 3-5 keywords, and a relevance score (0-1, where 1 is most relevant). "
+        "Return as a list, one topic per line, in the format: Label | keyword1, keyword2, keyword3 | score\n"
+        f"PDF Content:\n{text[:4000]}\nTopics:"
+    )
+    topics_text = llm(prompt)
+    topics = []
+    for line in topics_text.split('\n'):
+        if not line.strip() or '|' not in line:
+            continue
+        parts = [p.strip() for p in line.split('|')]
+        if len(parts) != 3:
+            continue
+        label = parts[0]
+        keywords = [k.strip() for k in parts[1].split(',') if k.strip()]
+        try:
+            score = float(parts[2])
+        except Exception:
+            score = None
+        topics.append({"label": label, "keywords": keywords, "score": score})
+    return topics 
