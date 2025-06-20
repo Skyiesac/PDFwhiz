@@ -50,3 +50,20 @@ if "pdf_id" in st.session_state:
                         st.markdown(f"- *Answer:* {qa['answer']}")
             else:
                 st.error(f"Error: {response.text}")
+
+# Bullet Points Section
+st.header("4. Extract Bullet Points from your PDF")
+if st.button("Extract Bullet Points"):
+    with st.spinner("Extracting bullet points..."):
+        data = {"pdf_id": st.session_state["pdf_id"]}
+        response = requests.post(f"{API_URL}/bullet-points", json=data)
+        if response.status_code == 200:
+            bullet_points = response.json()["bullet_points"]
+            if bullet_points:
+                st.markdown("### Bullet Points:")
+                for bp in bullet_points:
+                    st.markdown(f"- {bp}")
+            else:
+                st.info("No bullet points found.")
+        else:
+            st.error(f"Error: {response.text}")
