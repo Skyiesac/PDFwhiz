@@ -34,3 +34,19 @@ if "pdf_id" in st.session_state:
                 st.error(f"Error: {response.text}")
 else:
     st.info("Upload a PDF to start chatting.")
+
+# Quiz Section
+if "pdf_id" in st.session_state:
+    st.header("3. Generate a Quiz from your PDF")
+    if st.button("Generate Quiz"):
+        with st.spinner("Generating quiz..."):
+            data = {"pdf_id": st.session_state["pdf_id"]}
+            response = requests.post(f"{API_URL}/quiz", json=data)
+            if response.status_code == 200:
+                quiz = response.json()["questions"]
+                for i, qa in enumerate(quiz, 1):
+                    st.markdown(f"**Q{i}: {qa['question']}**")
+                    if qa.get("answer"):
+                        st.markdown(f"- *Answer:* {qa['answer']}")
+            else:
+                st.error(f"Error: {response.text}")
