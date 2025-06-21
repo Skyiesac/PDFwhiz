@@ -1,6 +1,12 @@
 export const API_CONFIG = {
   // Base URL for all API calls
-  BASE_URL: 'http://localhost:8000',
+  BASE_URL: (() => {
+    const url = import.meta.env.VITE_API_BASE_URL;
+    if (!url) {
+      throw new Error('VITE_API_BASE_URL is not set! Please configure it in your environment variables.');
+    }
+    return url;
+  })(),
   
   // API endpoints
   ENDPOINTS: {
@@ -23,8 +29,6 @@ export const getConfig = () => {
   
   return {
     ...API_CONFIG,
-    BASE_URL: isDevelopment 
-      ? 'http://localhost:8000' 
-      : import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
+    BASE_URL: API_CONFIG.BASE_URL
   };
-}; 
+};
