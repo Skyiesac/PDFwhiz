@@ -8,27 +8,39 @@ from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
 from schemas.pdf import QuestionRequest
 
+
 def get_gemini_api_key():
     return os.getenv("GEMINI_API_KEY")
 
+
 def get_embeddings():
     return HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
+
 
 def get_llm():
     gemini_key = get_gemini_api_key()
     if gemini_key:
         import google.generativeai as genai
+
         genai.configure(api_key=gemini_key)
+
         class GeminiLLM:
             def __init__(self):
                 self.model = genai.GenerativeModel("models/gemini-2.0-flash")
+
             def __call__(self, prompt):
                 response = self.model.generate_content(prompt)
                 return response.text
-        return GeminiLLM()
-    raise RuntimeError("No Gemini API key set. Please set GEMINI_API_KEY in .env for LLM answers.")
 
-async def process_pdf(file, pdf_indexes: Dict[str, Any], pdf_metadata: Dict[str, dict]) -> Tuple[str, int]:
+        return GeminiLLM()
+    raise RuntimeError(
+        "No Gemini API key set. Please set GEMINI_API_KEY in .env for LLM answers."
+    )
+
+
+async def process_pdf(
+    file, pdf_indexes: Dict[str, Any], pdf_metadata: Dict[str, dict]
+) -> Tuple[str, int]:
     pdf_bytes = await file.read()
     pdf_reader = PdfReader(io.BytesIO(pdf_bytes))
     text = "\n".join(page.extract_text() or "" for page in pdf_reader.pages)
@@ -41,11 +53,12 @@ async def process_pdf(file, pdf_indexes: Dict[str, Any], pdf_metadata: Dict[str,
     pdf_metadata[pdf_id] = {}
     return pdf_id, len(chunks)
 
+
 async def answer_question(request: QuestionRequest, vectorstore, metadata=None) -> str:
     retriever = vectorstore.as_retriever(search_kwargs={"k": 8})
     try:
         docs = retriever.get_relevant_documents(request.question)
-        best_chunk = docs[0].page_content.strip().replace('\n', ' ') if docs else ""
+        best_chunk = docs[0].page_content.strip().replace("\n", " ") if docs else ""
         llm = get_llm()
         prompt = (
             "Answer the following question using only the information from the provided PDF chunk. "
@@ -57,4 +70,4 @@ async def answer_question(request: QuestionRequest, vectorstore, metadata=None) 
         gemini_response = llm(prompt)
         return gemini_response.strip()
     except Exception:
-        return best_chunk or "No answer found." 
+        return best_chunk or "No answer found."

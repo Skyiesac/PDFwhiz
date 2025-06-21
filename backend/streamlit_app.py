@@ -19,7 +19,7 @@ if uploaded_file is not None:
         else:
             st.error(f"Upload failed: {response.text}")
 
-#Chat with PDF
+# Chat with PDF
 if "pdf_id" in st.session_state:
     st.header("2. Ask a question about your PDF")
     question = st.text_input("Your question")

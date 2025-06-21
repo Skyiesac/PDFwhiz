@@ -5,18 +5,20 @@ from schemas.quiz import QuizQuestion
 from services.pdf_chat import get_llm
 from services.cache import get_cached_pdf_data, set_cached_pdf_data
 
+
 def parse_quiz_output(quiz_text):
     questions = []
-    for block in quiz_text.strip().split('\n\n'):
-        lines = block.strip().split('\n')
+    for block in quiz_text.strip().split("\n\n"):
+        lines = block.strip().split("\n")
         if not lines:
             continue
-        q = lines[0].lstrip('1234567890. ').strip()
+        q = lines[0].lstrip("1234567890. ").strip()
         a = None
-        if len(lines) > 1 and lines[1].lower().startswith('answer:'):
+        if len(lines) > 1 and lines[1].lower().startswith("answer:"):
             a = lines[1][7:].strip()
         questions.append(QuizQuestion(question=q, answer=a))
     return questions
+
 
 async def generate_quiz_from_pdf(file):
     pdf_bytes = await file.read()
@@ -30,6 +32,7 @@ async def generate_quiz_from_pdf(file):
         f"PDF Content:\n{text[:4000]}\nQuiz:"
     )
     return parse_quiz_output(llm(prompt))
+
 
 async def generate_quiz_from_pdf_id(pdf_id, pdf_indexes, pdf_metadata):
     vectorstore = pdf_indexes.get(pdf_id)
@@ -50,18 +53,19 @@ async def generate_quiz_from_pdf_id(pdf_id, pdf_indexes, pdf_metadata):
     )
     return parse_quiz_output(llm(prompt))
 
+
 async def extract_bullet_points_from_pdf_id(pdf_id, pdf_indexes, pdf_metadata):
     cached_bullets = await get_cached_pdf_data(pdf_id, "bullet_points")
     if cached_bullets:
         return cached_bullets
-    
+
     vectorstore = pdf_indexes.get(pdf_id)
     if not vectorstore:
         return []
     docs = vectorstore.similarity_search(".", k=1000)  # Get as many as possible
     if not docs:
         return []
-   
+
     text = "\n".join(doc.page_content for doc in docs)
     llm = get_llm()
     prompt = (
@@ -70,17 +74,22 @@ async def extract_bullet_points_from_pdf_id(pdf_id, pdf_indexes, pdf_metadata):
         f"PDF Content:\n{text[:4000]}\nBullet Points:"
     )
     bullets_text = llm(prompt)
-    bullet_points = [line.lstrip('-•* ').strip() for line in bullets_text.split('\n') if line.strip()]
-    
-    await set_cached_pdf_data(pdf_id, "bullet_points", bullet_points, ttl=3600)  # 1 hour TTL
-    
+    bullet_points = [
+        line.lstrip("-•* ").strip() for line in bullets_text.split("\n") if line.strip()
+    ]
+
+    await set_cached_pdf_data(
+        pdf_id, "bullet_points", bullet_points, ttl=3600
+    )  # 1 hour TTL
+
     return bullet_points
+
 
 async def extract_topics_from_pdf_id(pdf_id, pdf_indexes, pdf_metadata):
     cached_topics = await get_cached_pdf_data(pdf_id, "topics")
     if cached_topics:
         return cached_topics
-    
+
     vectorstore = pdf_indexes.get(pdf_id)
     if not vectorstore:
         return []
@@ -97,20 +106,20 @@ async def extract_topics_from_pdf_id(pdf_id, pdf_indexes, pdf_metadata):
     )
     topics_text = llm(prompt)
     topics = []
-    for line in topics_text.split('\n'):
-        if not line.strip() or '|' not in line:
+    for line in topics_text.split("\n"):
+        if not line.strip() or "|" not in line:
             continue
-        parts = [p.strip() for p in line.split('|')]
+        parts = [p.strip() for p in line.split("|")]
         if len(parts) != 3:
             continue
         label = parts[0]
-        keywords = [k.strip() for k in parts[1].split(',') if k.strip()]
+        keywords = [k.strip() for k in parts[1].split(",") if k.strip()]
         try:
             score = float(parts[2])
         except Exception:
             score = None
         topics.append({"label": label, "keywords": keywords, "score": score})
-    
+
     await set_cached_pdf_data(pdf_id, "topics", topics, ttl=3600)  # 1 hour TTL
-    
-    return topics 
+
+    return topics
