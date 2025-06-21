@@ -7,8 +7,26 @@ REDIS_CONTAINER="pdfwhiz-redis"
 case "$1" in
     "start")
         echo "Starting Redis container..."
-        docker run -d -p 6379:6379 --name $REDIS_CONTAINER redis:alpine
-        echo "Redis started successfully!"
+        # Check if container already exists
+        if docker ps -a --format "table {{.Names}}" | grep -q "^$REDIS_CONTAINER$"; then
+            echo "Container exists, starting it..."
+            docker start $REDIS_CONTAINER
+        else
+            echo "Creating new Redis container..."
+            docker run -d -p 6379:6379 --name $REDIS_CONTAINER redis:alpine
+        fi
+        
+        # Wait for Redis to be ready
+        echo "Waiting for Redis to be ready..."
+        for i in {1..10}; do
+            if docker exec $REDIS_CONTAINER redis-cli ping > /dev/null 2>&1; then
+                echo "Redis is ready!"
+                exit 0
+            fi
+            sleep 1
+        done
+        echo "Redis failed to start properly"
+        exit 1
         ;;
     "stop")
         echo "Stopping Redis container..."

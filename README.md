@@ -65,51 +65,32 @@ git clone <repository-url>
 cd PDFwhiz
 ```
 
-### 2. Backend Setup
+### 2. Initial Setup (One-time)
 
 ```bash
-cd backend
+In backend and frontend directories , add .env files and add the respective things. 
 
-python -m venv venv
-source venv/bin/activate  
-
-pip install -r requirements.txt
-
-cp env.example .env
-
-uvicorn main:app --reload
+Setup virtual environment for python (Recommended)
 ```
 
-### 3. Frontend Setup
+### 3. Start Everything with One Command! 🎉
 
 ```bash
-cd ../frontend
-
-npm install
-
-cp env.example .env
-
-npm run dev
+./start.sh
 ```
 
-### 4. Start Redis (Required for caching)
+That's it! The script will automatically:
+- 🐳 Start Redis container
+- 🔧 Start the FastAPI backend
+- 🎨 Start the React frontend
+- ✅ Show you the URLs to access
 
-```bash
-
-cd ../backend
-
-./redis-setup.sh start
-
-# Or manually with Docker
-docker run -d --name redis-pdfwhiz -p 6379:6379 redis:alpine
-```
-
-
-### 6. Access the Application
-
+**Access your app:**
 - **Frontend**: http://localhost:5173
 - **Backend API**: http://localhost:8000
 - **API Documentation**: http://localhost:8000/docs
+
+**To stop everything:** Press `Ctrl+C` in the terminal
 
 
 ## 🔍 Troubleshooting
@@ -126,7 +107,7 @@ docker run -d --name redis-pdfwhiz -p 6379:6379 redis:alpine
    ```
 
 2. **API Key Issues**
-   - Ensure your  API key is correctly set in `.env`
+   - Ensure your Gemini API key is correctly set in `backend/.env`
    - Check API key permissions and quota
 
 3. **Port Conflicts**
@@ -139,5 +120,15 @@ docker run -d --name redis-pdfwhiz -p 6379:6379 redis:alpine
    - Check file size limits
    - Verify PDF is text-based (not scanned images)
 
+5. **Start Script Issues**
+   ```bash
+   # Make sure script is executable
+   chmod +x start.sh
+   
+   # Check if all dependencies are installed
+   ./start.sh
+
+   #Check the environment activation command as it is different for different OS.
+   ```
 
 **Happy PDF chatting! 📚✨** 
