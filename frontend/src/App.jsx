@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import './App.css';
 import Cursor from './Cursor';
+import Particles from './Particles';
 import { getApiUrl, API_CONFIG } from './config';
 
 function App() {
@@ -310,6 +311,7 @@ function App() {
     return (
       <>
         <Cursor />
+        <Particles />
         <div className={`splash-screen ${theme === 'dark' ? 'dark-theme' : 'light-theme'}`}>
           <div className="pdfwhiz-animation big">PDFwhiz</div>
           <div className="splash-tagline">Loading your PDF magic...</div>
@@ -321,6 +323,7 @@ function App() {
   return (
     <>
       <Cursor />
+      <Particles />
       <div className={`fun-bg ${theme === 'dark' ? 'dark-theme' : 'light-theme'}`} style={{ minHeight: '100vh', width: '100vw', boxSizing: 'border-box' }}>
         <header className="fun-header">
           <div className="logo-wordmark">PDFwhiz</div>
