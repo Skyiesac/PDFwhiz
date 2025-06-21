@@ -3,6 +3,7 @@ import random
 from PyPDF2 import PdfReader
 from schemas.quiz import QuizQuestion
 from services.pdf_chat import get_llm
+from services.cache import get_cached_pdf_data, set_cached_pdf_data
 
 def parse_quiz_output(quiz_text):
     questions = []
@@ -50,6 +51,10 @@ async def generate_quiz_from_pdf_id(pdf_id, pdf_indexes, pdf_metadata):
     return parse_quiz_output(llm(prompt))
 
 async def extract_bullet_points_from_pdf_id(pdf_id, pdf_indexes, pdf_metadata):
+    cached_bullets = await get_cached_pdf_data(pdf_id, "bullet_points")
+    if cached_bullets:
+        return cached_bullets
+    
     vectorstore = pdf_indexes.get(pdf_id)
     if not vectorstore:
         return []
@@ -66,9 +71,16 @@ async def extract_bullet_points_from_pdf_id(pdf_id, pdf_indexes, pdf_metadata):
     )
     bullets_text = llm(prompt)
     bullet_points = [line.lstrip('-•* ').strip() for line in bullets_text.split('\n') if line.strip()]
+    
+    await set_cached_pdf_data(pdf_id, "bullet_points", bullet_points, ttl=3600)  # 1 hour TTL
+    
     return bullet_points
 
 async def extract_topics_from_pdf_id(pdf_id, pdf_indexes, pdf_metadata):
+    cached_topics = await get_cached_pdf_data(pdf_id, "topics")
+    if cached_topics:
+        return cached_topics
+    
     vectorstore = pdf_indexes.get(pdf_id)
     if not vectorstore:
         return []
@@ -98,4 +110,7 @@ async def extract_topics_from_pdf_id(pdf_id, pdf_indexes, pdf_metadata):
         except Exception:
             score = None
         topics.append({"label": label, "keywords": keywords, "score": score})
+    
+    await set_cached_pdf_data(pdf_id, "topics", topics, ttl=3600)  # 1 hour TTL
+    
     return topics 

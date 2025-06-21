@@ -3,6 +3,7 @@ from schemas.pdf import PDFUploadResponse, QuestionRequest, AnswerResponse
 from schemas.quiz import QuizRequest, QuizResponse, BulletPointsRequest, BulletPointsResponse
 from services.pdf_chat import process_pdf, answer_question
 from services.quiz import generate_quiz_from_pdf, generate_quiz_from_pdf_id, extract_bullet_points_from_pdf_id, extract_topics_from_pdf_id
+from services.cache import clear_pdf_cache
 
 router = APIRouter()
 pdf_indexes = {}
@@ -13,6 +14,10 @@ async def upload_pdf(file: UploadFile = File(...)):
     if not file.filename.endswith(".pdf"):
         raise HTTPException(status_code=400, detail="Only PDF files are supported.")
     pdf_id, num_chunks = await process_pdf(file, pdf_indexes, pdf_metadata)
+    
+    # Clear any existing cache for this PDF ID (in case of re-upload)
+    await clear_pdf_cache(pdf_id)
+    
     return PDFUploadResponse(pdf_id=pdf_id, num_chunks=num_chunks)
 
 @router.post("/ask", response_model=AnswerResponse)

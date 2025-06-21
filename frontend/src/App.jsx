@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import './App.css';
 import Cursor from './Cursor';
+import { getApiUrl, API_CONFIG } from './config';
 
 function App() {
   const [loading, setLoading] = useState(true);
@@ -17,6 +18,7 @@ function App() {
   const [topics, setTopics] = useState(null);
   const [bullets, setBullets] = useState(null);
   const [quizAnswersVisible, setQuizAnswersVisible] = useState([]);
+  const [quizLoading, setQuizLoading] = useState(false);
   const fileInputRef = useRef();
 
   React.useEffect(() => {
@@ -48,7 +50,7 @@ function App() {
     const formData = new FormData();
     formData.append('file', file);
     try {
-      const res = await fetch('http://localhost:8000/api/v1/pdf-chat/upload', {
+      const res = await fetch(getApiUrl(API_CONFIG.ENDPOINTS.UPLOAD), {
         method: 'POST',
         body: formData,
       });
@@ -77,7 +79,7 @@ function App() {
     setError(null);
     if (!question.trim()) return;
     try {
-      const res = await fetch('http://localhost:8000/api/v1/pdf-chat/ask', {
+      const res = await fetch(getApiUrl(API_CONFIG.ENDPOINTS.ASK), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ pdf_id: pdfId, question }),
@@ -94,8 +96,9 @@ function App() {
     setQuiz(null);
     setQuizAnswersVisible([]);
     setError(null);
+    setQuizLoading(true);
     try {
-      const res = await fetch('http://localhost:8000/api/v1/pdf-chat/quiz', {
+      const res = await fetch(getApiUrl(API_CONFIG.ENDPOINTS.QUIZ), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ pdf_id: pdfId }),
@@ -106,6 +109,8 @@ function App() {
       setQuizAnswersVisible(Array(data.questions.length).fill(false));
     } catch (err) {
       setError('Error: ' + err.message);
+    } finally {
+      setQuizLoading(false);
     }
   };
 
@@ -113,7 +118,7 @@ function App() {
     setTopics(null);
     setError(null);
     try {
-      const res = await fetch('http://localhost:8000/api/v1/pdf-chat/topics', {
+      const res = await fetch(getApiUrl(API_CONFIG.ENDPOINTS.TOPICS), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ pdf_id: pdfId }),
@@ -130,7 +135,7 @@ function App() {
     setBullets(null);
     setError(null);
     try {
-      const res = await fetch('http://localhost:8000/api/v1/pdf-chat/bullet-points', {
+      const res = await fetch(getApiUrl(API_CONFIG.ENDPOINTS.BULLET_POINTS), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ pdf_id: pdfId }),
@@ -146,7 +151,7 @@ function App() {
   // UI for each feature page
   const renderAskPage = () => (
     <div className="main-content">
-      <button className="back-icon-btn" onClick={() => setActiveOption(null)} aria-label="Back to Options">
+      <button className="back-icon-btn" onClick={() => { setActiveOption(null); setQuizLoading(false); }} aria-label="Back to Options">
         <svg width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M15 19l-7-7 7-7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
       </button>
       <h1 className="fun-title">Ask a Question</h1>
@@ -168,7 +173,7 @@ function App() {
 
   const renderQuizPage = () => (
     <div className="main-content">
-      <button className="back-icon-btn" onClick={() => setActiveOption(null)} aria-label="Back to Options">
+      <button className="back-icon-btn" onClick={() => { setActiveOption(null); setQuizLoading(false); }} aria-label="Back to Options">
         <svg width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M15 19l-7-7 7-7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
       </button>
       <h1 className="fun-title">Quiz</h1>
@@ -199,8 +204,13 @@ function App() {
           </div>
         )) : <div className="fun-upload-label" style={{ marginTop: 20 }}>Loading quiz...</div>}
         {error && <div className="fun-error-message">{error}</div>}
-        <button className="fun-upload-btn" style={{ marginTop: 30, fontSize: 17, float: 'right' }} onClick={handleQuiz}>
-          Take Another Quiz &rarr;
+        <button 
+          className="fun-upload-btn" 
+          style={{ marginTop: 30, fontSize: 17, float: 'right', opacity: quizLoading ? 0.5 : 1, cursor: quizLoading ? 'not-allowed' : 'pointer' }} 
+          onClick={handleQuiz}
+          disabled={quizLoading}
+        >
+          {quizLoading ? 'Loading...' : 'Take Another Quiz →'}
         </button>
       </div>
     </div>
@@ -208,7 +218,7 @@ function App() {
 
   const renderTopicsPage = () => (
     <div className="main-content">
-      <button className="back-icon-btn" onClick={() => setActiveOption(null)} aria-label="Back to Options">
+      <button className="back-icon-btn" onClick={() => { setActiveOption(null); setQuizLoading(false); }} aria-label="Back to Options">
         <svg width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M15 19l-7-7 7-7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
       </button>
       <h1 className="fun-title">Topics</h1>
@@ -246,7 +256,7 @@ function App() {
 
   const renderBulletsPage = () => (
     <div className="main-content">
-      <button className="back-icon-btn" onClick={() => setActiveOption(null)} aria-label="Back to Options">
+      <button className="back-icon-btn" onClick={() => { setActiveOption(null); setQuizLoading(false); }} aria-label="Back to Options">
         <svg width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M15 19l-7-7 7-7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
       </button>
       <h1 className="fun-title">Bullet Summary</h1>
@@ -262,7 +272,7 @@ function App() {
   // UI for options page
   const renderOptions = () => (
     <div className="main-content">
-      <button className="back-icon-btn" onClick={() => { setPage('upload'); setPdfId(null); setActiveOption(null); setSuccess(null); setAnswer(null); setQuiz(null); setTopics(null); setBullets(null); }} aria-label="Back to Upload">
+      <button className="back-icon-btn" onClick={() => { setPage('upload'); setPdfId(null); setActiveOption(null); setSuccess(null); setAnswer(null); setQuiz(null); setTopics(null); setBullets(null); setQuizLoading(false); }} aria-label="Back to Upload">
         <svg width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M15 19l-7-7 7-7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
       </button>
       <h1 className="fun-title">PDF Options</h1>
@@ -323,8 +333,8 @@ function App() {
             </a>
             <a href="mailto:jainsachi1202@gmail.com" aria-label="Mail">
               <svg width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{verticalAlign: 'middle'}}><path d="M4 4h16v16H4z" stroke="currentColor" strokeWidth="2" fill="none"/><path d="M4 4l8 8 8-8" stroke="currentColor" strokeWidth="2" fill="none"/></svg>
-            </a>
-          </div>
+        </a>
+      </div>
           <button className="theme-toggle-btn" onClick={toggleTheme} aria-label="Toggle dark/light mode">
             {theme === 'light' ? (
               <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
@@ -354,7 +364,7 @@ function App() {
               />
               <button className="fun-upload-btn" onClick={() => fileInputRef.current.click()} disabled={uploading}>
                 {uploading ? 'Uploading...' : 'Choose PDF'}
-              </button>
+        </button>
               {success && <div className="fun-success-message">{success}</div>}
               {error && <div className="fun-error-message">{error}</div>}
             </section>
